@@ -35,6 +35,7 @@
   .shell { max-width: 860px; margin: 0 auto; padding: 24px 16px; }
 
   header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .logo { width: 32px; height: 32px; border-radius: 50%; }
   header h1 { font-size: 17px; font-weight: 500; }
   .chip { font-size: 11px; padding: 2px 8px; border-radius: 99px; font-weight: 500; background: var(--green-bg); color: var(--green-text); border: 0.5px solid var(--green-border); }
   .chip.off { background: var(--bg3); color: var(--text2); border-color: var(--border); }
@@ -115,7 +116,10 @@
 <body>
 <div class="shell">
   <header>
-    <h1>HubSpot Sandbox Manager</h1>
+    <div style="display:flex;align-items:center;gap:10px">
+      <img src="image.png" class="logo" alt="Acelab" />
+      <h1>HubSpot Sandbox Manager</h1>
+    </div>
   </header>
   <div id="app"></div>
 </div>
