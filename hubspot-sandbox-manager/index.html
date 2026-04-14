@@ -116,7 +116,6 @@
 <div class="shell">
   <header>
     <h1>HubSpot Sandbox Manager</h1>
-    <div id="status-chip" class="chip off">Not connected</div>
   </header>
   <div id="app"></div>
 </div>
@@ -131,7 +130,6 @@ const FLAGS = ["AECO_Revit_Keynotes","AECO_SpecPlanner_Pro","AECO_Document_Build
 const LIFECYCLE = ["subscriber","lead","marketingqualifiedlead","salesqualifiedlead","opportunity","customer","evangelist","other"];
 const COMPANY_PROPS = ["name","company_id","domain","phone","city","state","country","zip","address","industry","numberofemployees","annualrevenue","lifecyclestage","hs_lead_status","type","mh_feature_flags","mh_users","mh_projects","mh_conversations","description","createdate","hs_lastmodifieddate"];
 
-let pat = localStorage.getItem("hs_sandbox_pat") || "";
 let tab = "search";
 let searchResults = [];
 let searchCursor = null;
@@ -142,7 +140,7 @@ let editFlags = [];
 async function hs(path, method = "GET", body) {
   const res = await fetch(`${BASE}${path}`, {
     method,
-    headers: { Authorization: `Bearer ${pat}`, "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
@@ -167,8 +165,7 @@ function toast(msg, type = "ok") {
 }
 
 const parseFlags = raw => raw ? raw.split(";").filter(Boolean) : [];
-const chip = document.getElementById("status-chip");
-function setConnected(val) { chip.textContent = val ? "Connected" : "Not connected"; chip.className = val ? "chip" : "chip off"; }
+function setConnected() {}
 function fmt(val) { return val || "—"; }
 function fmtDate(val) { return val ? val.slice(0, 10) : "—"; }
 function flagBadges(raw) {
@@ -187,55 +184,18 @@ async function checkDuplicateCompanyId(cid) {
 
 function render() {
   const app = document.getElementById("app");
-  if (!pat) { app.innerHTML = renderLogin(); bindLogin(); return; }
-  setConnected(true);
   if (selectedCompany) { app.innerHTML = renderDetail(); bindDetail(); return; }
   app.innerHTML = `
     <div class="tabs">
       <button class="tab ${tab==="search"?"active":""}" data-tab="search">Search & Manage</button>
       <button class="tab ${tab==="create"?"active":""}" data-tab="create">Create Company</button>
-      <div style="flex:1"></div>
-      <button class="btn sm danger" id="disconnect-btn">Disconnect</button>
     </div>
     ${tab === "search" ? renderSearch() : renderCreate()}
   `;
   if (tab === "search") bindSearch(); else bindCreate();
   document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => { tab = t.dataset.tab; render(); }));
-  document.getElementById("disconnect-btn").addEventListener("click", () => { pat = ""; localStorage.removeItem("hs_sandbox_pat"); setConnected(false); render(); });
 }
 
-function renderLogin() {
-  return `<div class="pat-wrap"><div class="card">
-    <h2 class="mb8">Connect to sandbox</h2>
-    <p>Enter your HubSpot sandbox Private App token. Stored in your browser only.</p>
-    <label>Private App Token (PAT)</label>
-    <input type="password" id="pat-input" placeholder="pat-na1-..." class="mb12" />
-    <div id="login-err"></div>
-    <button class="btn primary" id="connect-btn" style="width:100%">Connect</button>
-  </div></div>`;
-}
-
-function bindLogin() {
-  const inp = document.getElementById("pat-input");
-  const btn = document.getElementById("connect-btn");
-  const err = document.getElementById("login-err");
-  async function tryConnect() {
-    const val = inp.value.trim(); if (!val) return;
-    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Verifying...';
-    try {
-      pat = val;
-      await hs("/crm/v3/objects/companies?limit=1");
-      localStorage.setItem("hs_sandbox_pat", pat);
-      render();
-    } catch(e) {
-      pat = "";
-      err.innerHTML = `<div class="alert err">${e.message}</div>`;
-      btn.disabled = false; btn.textContent = "Connect";
-    }
-  }
-  btn.addEventListener("click", tryConnect);
-  inp.addEventListener("keydown", e => e.key === "Enter" && tryConnect());
-}
 
 function renderSearch() {
   const rows = searchResults.map(c => {
@@ -485,7 +445,6 @@ function bindCreate() {
   });
 }
 
-if (pat) setConnected(true);
 render();
 </script>
 </body>
