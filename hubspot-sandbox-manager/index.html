@@ -123,7 +123,8 @@
 <div id="toast"></div>
 
 <script>
-const BASE = "/api/hubspot";
+const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+const BASE = IS_LOCAL ? "/api/hubspot" : "https://api.hubapi.com";
 const FLAGS = ["AECO_Revit_Keynotes","AECO_SpecPlanner_Pro","AECO_Document_Builder"];
 const LIFECYCLE = ["subscriber","lead","marketingqualifiedlead","salesqualifiedlead","opportunity","customer","evangelist","other"];
 const COMPANY_PROPS = ["name","company_id","domain","phone","city","state","country","zip","address","industry","numberofemployees","annualrevenue","lifecyclestage","hs_lead_status","type","mh_feature_flags","mh_users","mh_projects","mh_conversations","description","createdate","hs_lastmodifieddate"];
