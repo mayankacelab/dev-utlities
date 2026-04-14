@@ -1,5 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/api/hubspot/:path*", "destination": "/api/hubspot/proxy" }
-  ]
-}

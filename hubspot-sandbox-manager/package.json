@@ -1,13 +1,12 @@
 {
   "name": "hubspot-sandbox-manager",
   "version": "1.0.0",
-  "description": "Local dev server with HubSpot API proxy",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
+  "description": "HubSpot Sandbox Manager — static web app + Cloudflare Worker proxy",
+  "devDependencies": {
+    "wrangler": "^3.0.0"
   },
-  "dependencies": {
-    "express": "^4.18.2",
-    "node-fetch": "^2.7.0"
+  "scripts": {
+    "worker:dev": "wrangler dev",
+    "worker:deploy": "wrangler deploy"
   }
 }
