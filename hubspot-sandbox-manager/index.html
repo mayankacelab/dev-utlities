@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HubSpot Sandbox Manager</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff; --bg2: #f5f5f4; --bg3: #e8e8e6;
+    --text: #1a1a18; --text2: #6b6b67; --text3: #9a9a96;
+    --border: rgba(0,0,0,0.1); --border2: rgba(0,0,0,0.18);
+    --blue-bg: #e6f1fb; --blue-text: #0c447c; --blue-border: #b5d4f4;
+    --green-bg: #eaf3de; --green-text: #3b6d11; --green-border: #c0dd97;
+    --red-bg: #fcebeb; --red-text: #a32d2d; --red-border: #f7c1c1;
+    --amber-bg: #faeeda; --amber-text: #854f0b; --amber-border: #fac775;
+    --radius: 8px; --radius-lg: 12px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a; --bg2: #252523; --bg3: #2e2e2b;
+      --text: #f0ede8; --text2: #a8a8a2; --text3: #6e6e6a;
+      --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
+      --blue-bg: #042c53; --blue-text: #b5d4f4; --blue-border: #185fa5;
+      --green-bg: #173404; --green-text: #c0dd97; --green-border: #3b6d11;
+      --red-bg: #501313; --red-text: #f7c1c1; --red-border: #a32d2d;
+      --amber-bg: #412402; --amber-text: #fac775; --amber-border: #854f0b;
+    }
+  }
+
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg2); color: var(--text); font-size: 14px; line-height: 1.5; min-height: 100vh; }
+
+  .shell { max-width: 860px; margin: 0 auto; padding: 24px 16px; }
+
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  header h1 { font-size: 17px; font-weight: 500; }
+  .chip { font-size: 11px; padding: 2px 8px; border-radius: 99px; font-weight: 500; background: var(--green-bg); color: var(--green-text); border: 0.5px solid var(--green-border); }
+  .chip.off { background: var(--bg3); color: var(--text2); border-color: var(--border); }
+
+  .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 12px; }
+
+  label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+  input, select { width: 100%; padding: 8px 10px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); font-size: 13px; outline: none; transition: border-color .15s; }
+  input:focus, select:focus { border-color: #378add; box-shadow: 0 0 0 2px rgba(55,138,221,.15); }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); font-size: 13px; cursor: pointer; transition: background .12s, transform .1s; white-space: nowrap; }
+  .btn:hover { background: var(--bg2); }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+  .btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .btn.primary:hover { opacity: .88; }
+  .btn.danger { color: var(--red-text); border-color: var(--red-border); }
+  .btn.danger:hover { background: var(--red-bg); }
+  .btn.sm { padding: 4px 10px; font-size: 12px; }
+
+  .tabs { display: flex; border-bottom: 0.5px solid var(--border); margin-bottom: 16px; gap: 0; }
+  .tab { padding: 8px 16px 11px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text2); font-size: 13px; cursor: pointer; transition: color .12s; }
+  .tab.active { color: var(--text); border-bottom-color: var(--text); font-weight: 500; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .gap8 { display: flex; gap: 8px; align-items: center; }
+  .mb8 { margin-bottom: 8px; }
+  .mb12 { margin-bottom: 12px; }
+  .mb16 { margin-bottom: 16px; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 11px; color: var(--text2); font-weight: 500; padding: 6px 8px; border-bottom: 0.5px solid var(--border); }
+  td { font-size: 13px; padding: 8px 8px; border-bottom: 0.5px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr.clickable { cursor: pointer; }
+  tr.clickable:hover td { background: var(--bg2); }
+
+  .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 99px; font-weight: 500; }
+  .badge.blue { background: var(--blue-bg); color: var(--blue-text); border: 0.5px solid var(--blue-border); }
+  .badge.green { background: var(--green-bg); color: var(--green-text); border: 0.5px solid var(--green-border); }
+  .badge.gray { background: var(--bg3); color: var(--text2); border: 0.5px solid var(--border); }
+
+  .flag-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 4px 12px; border-radius: 99px; cursor: pointer; margin: 0 4px 6px 0; font-weight: 500; border: 0.5px solid; transition: background .12s; user-select: none; }
+  .flag-pill.on { background: var(--green-bg); color: var(--green-text); border-color: var(--green-border); }
+  .flag-pill.off { background: var(--bg2); color: var(--text2); border-color: var(--border); }
+
+  .alert { font-size: 13px; padding: 10px 14px; border-radius: var(--radius); margin-bottom: 12px; border: 0.5px solid; }
+  .alert.err { background: var(--red-bg); color: var(--red-text); border-color: var(--red-border); }
+  .alert.ok { background: var(--green-bg); color: var(--green-text); border-color: var(--green-border); }
+  .alert.info { background: var(--blue-bg); color: var(--blue-text); border-color: var(--blue-border); }
+
+  .divider { border-top: 0.5px solid var(--border); margin: 12px 0; }
+
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--blue-bg); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; color: var(--blue-text); flex-shrink: 0; }
+
+  .field-label { font-size: 11px; color: var(--text2); }
+  .field-val { font-size: 13px; }
+
+  .detail-grid { display: grid; grid-template-columns: 140px 1fr; gap: 6px 12px; }
+
+  .empty { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 13px; }
+
+  .pat-wrap { max-width: 480px; margin: 80px auto 0; }
+  .pat-wrap h2 { font-size: 18px; font-weight: 500; margin-bottom: 6px; }
+  .pat-wrap p { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
+
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border2); border-top-color: var(--text); border-radius: 50%; animation: spin .6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .back-link { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text2); cursor: pointer; margin-bottom: 12px; }
+  .back-link:hover { color: var(--text); }
+
+  #toast { position: fixed; bottom: 20px; right: 20px; padding: 10px 16px; border-radius: var(--radius); font-size: 13px; font-weight: 500; display: none; z-index: 99; border: 0.5px solid; }
+  #toast.show { display: block; animation: fadeIn .2s; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <h1>HubSpot Sandbox Manager</h1>
+    <div id="status-chip" class="chip off">Not connected</div>
+  </header>
+  <div id="app"></div>
+</div>
+<div id="toast"></div>
+
+<script>
+const BASE = "/api/hubspot";
+const FLAGS = ["AECO_Revit_Keynotes","AECO_SpecPlanner_Pro","AECO_Document_Builder"];
+const LIFECYCLE = ["subscriber","lead","marketingqualifiedlead","salesqualifiedlead","opportunity","customer","evangelist","other"];
+const COMPANY_PROPS = ["name","company_id","domain","phone","city","state","country","zip","address","industry","numberofemployees","annualrevenue","lifecyclestage","hs_lead_status","type","mh_feature_flags","mh_users","mh_projects","mh_conversations","description","createdate","hs_lastmodifieddate"];
+
+let pat = localStorage.getItem("hs_sandbox_pat") || "";
+let tab = "search";
+let searchResults = [];
+let searchCursor = null;
+let searchTotal = null;
+let selectedCompany = null;
+let editFlags = [];
+
+async function hs(path, method = "GET", body) {
+  const res = await fetch(`${BASE}${path}`, {
+    method,
+    headers: { Authorization: `Bearer ${pat}`, "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    let msg = `${res.status}`;
+    try { const j = JSON.parse(t); msg = j.message || j.error || msg; } catch {}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+let toastTimer;
+function toast(msg, type = "ok") {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = "show";
+  el.style.background = type === "ok" ? "var(--green-bg)" : type === "err" ? "var(--red-bg)" : "var(--blue-bg)";
+  el.style.color = type === "ok" ? "var(--green-text)" : type === "err" ? "var(--red-text)" : "var(--blue-text)";
+  el.style.borderColor = type === "ok" ? "var(--green-border)" : type === "err" ? "var(--red-border)" : "var(--blue-border)";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = "", 3000);
+}
+
+const parseFlags = raw => raw ? raw.split(";").filter(Boolean) : [];
+const chip = document.getElementById("status-chip");
+function setConnected(val) { chip.textContent = val ? "Connected" : "Not connected"; chip.className = val ? "chip" : "chip off"; }
+function fmt(val) { return val || "—"; }
+function fmtDate(val) { return val ? val.slice(0, 10) : "—"; }
+function flagBadges(raw) {
+  const flags = parseFlags(raw);
+  if (!flags.length) return '<span style="color:var(--text3);font-size:12px">none</span>';
+  return flags.map(f => `<span class="badge green">${f.replace("AECO_","")}</span>`).join(" ");
+}
+
+async function checkDuplicateCompanyId(cid) {
+  const d = await hs("/crm/v3/objects/companies/search", "POST", {
+    filterGroups: [{ filters: [{ propertyName: "company_id", operator: "EQ", value: cid }] }],
+    properties: ["name","company_id"], limit: 1,
+  });
+  return d.results?.length > 0 ? d.results[0] : null;
+}
+
+function render() {
+  const app = document.getElementById("app");
+  if (!pat) { app.innerHTML = renderLogin(); bindLogin(); return; }
+  setConnected(true);
+  if (selectedCompany) { app.innerHTML = renderDetail(); bindDetail(); return; }
+  app.innerHTML = `
+    <div class="tabs">
+      <button class="tab ${tab==="search"?"active":""}" data-tab="search">Search & Manage</button>
+      <button class="tab ${tab==="create"?"active":""}" data-tab="create">Create Company</button>
+      <div style="flex:1"></div>
+      <button class="btn sm danger" id="disconnect-btn">Disconnect</button>
+    </div>
+    ${tab === "search" ? renderSearch() : renderCreate()}
+  `;
+  if (tab === "search") bindSearch(); else bindCreate();
+  document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => { tab = t.dataset.tab; render(); }));
+  document.getElementById("disconnect-btn").addEventListener("click", () => { pat = ""; localStorage.removeItem("hs_sandbox_pat"); setConnected(false); render(); });
+}
+
+function renderLogin() {
+  return `<div class="pat-wrap"><div class="card">
+    <h2 class="mb8">Connect to sandbox</h2>
+    <p>Enter your HubSpot sandbox Private App token. Stored in your browser only.</p>
+    <label>Private App Token (PAT)</label>
+    <input type="password" id="pat-input" placeholder="pat-na1-..." class="mb12" />
+    <div id="login-err"></div>
+    <button class="btn primary" id="connect-btn" style="width:100%">Connect</button>
+  </div></div>`;
+}
+
+function bindLogin() {
+  const inp = document.getElementById("pat-input");
+  const btn = document.getElementById("connect-btn");
+  const err = document.getElementById("login-err");
+  async function tryConnect() {
+    const val = inp.value.trim(); if (!val) return;
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Verifying...';
+    try {
+      pat = val;
+      await hs("/crm/v3/objects/companies?limit=1");
+      localStorage.setItem("hs_sandbox_pat", pat);
+      render();
+    } catch(e) {
+      pat = "";
+      err.innerHTML = `<div class="alert err">${e.message}</div>`;
+      btn.disabled = false; btn.textContent = "Connect";
+    }
+  }
+  btn.addEventListener("click", tryConnect);
+  inp.addEventListener("keydown", e => e.key === "Enter" && tryConnect());
+}
+
+function renderSearch() {
+  const rows = searchResults.map(c => {
+    const p = c.properties;
+    return `<tr class="clickable" data-id="${c.id}">
+      <td><span style="font-weight:500">${p.name||"—"}</span><br><span style="font-size:11px;color:var(--text3)">${p.company_id||""}</span></td>
+      <td style="color:var(--text2)">${fmt(p.domain)}</td>
+      <td>${p.lifecyclestage?`<span class="badge blue">${p.lifecyclestage}</span>`:"—"}</td>
+      <td>${flagBadges(p.mh_feature_flags)}</td>
+      <td><button class="btn sm">View</button></td>
+    </tr>`;
+  }).join("");
+  const pagination = searchResults.length ? `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;font-size:12px;color:var(--text2)">
+      <span>${searchTotal !== null ? `Showing ${searchResults.length} of ${searchTotal}` : `${searchResults.length} results`}</span>
+      ${searchCursor ? `<button class="btn sm" id="load-more-btn">Load more</button>` : ""}
+    </div>` : "";
+  return `<div class="card">
+    <div class="gap8 mb16">
+      <input id="search-input" placeholder="Search by name or domain..." style="flex:1" />
+      <button class="btn primary" id="search-btn">Search</button>
+      <button class="btn" id="browse-btn">Browse All</button>
+    </div>
+    <div id="search-alert"></div>
+    ${searchResults.length ? `<table><thead><tr><th>Company</th><th>Domain</th><th>Lifecycle</th><th>Flags</th><th></th></tr></thead><tbody>${rows}</tbody></table>${pagination}`
+    : `<div class="empty">Search for a company or click Browse All</div>`}
+  </div>`;
+}
+
+function bindSearch() {
+  const inp = document.getElementById("search-input");
+  const btn = document.getElementById("search-btn");
+  const browseBtn = document.getElementById("browse-btn");
+  const alert = document.getElementById("search-alert");
+
+  async function doSearch() {
+    const q = inp.value.trim(); if (!q) return;
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+    alert.innerHTML = "";
+    try {
+      const [nameRes, cidRes] = await Promise.allSettled([
+        hs("/crm/v3/objects/companies/search", "POST", { query: q, properties: COMPANY_PROPS, limit: 20 }),
+        hs("/crm/v3/objects/companies/search", "POST", {
+          filterGroups: [{ filters: [{ propertyName: "company_id", operator: "CONTAINS_TOKEN", value: q }] }],
+          properties: COMPANY_PROPS, limit: 20,
+        }),
+      ]);
+      const seen = new Set();
+      const merged = [];
+      for (const res of [nameRes, cidRes]) {
+        if (res.status === "fulfilled") {
+          for (const c of (res.value.results || [])) {
+            if (!seen.has(c.id)) { seen.add(c.id); merged.push(c); }
+          }
+        }
+      }
+      searchResults = merged;
+      searchCursor = null;
+      searchTotal = merged.length;
+      if (!searchResults.length) alert.innerHTML = `<div class="alert info">No companies found for "${q}"</div>`;
+      render(); document.getElementById("search-input").value = q;
+    } catch(e) { alert.innerHTML = `<div class="alert err">${e.message}</div>`; btn.disabled = false; btn.textContent = "Search"; }
+  }
+
+  async function doBrowse(append = false) {
+    if (!append) { searchResults = []; searchCursor = null; searchTotal = null; }
+    browseBtn.disabled = true; browseBtn.innerHTML = '<span class="spinner"></span>';
+    alert.innerHTML = "";
+    try {
+      const params = new URLSearchParams({ limit: 100, properties: COMPANY_PROPS.join(",") });
+      if (append && searchCursor) params.set("after", searchCursor);
+      const d = await hs(`/crm/v3/objects/companies?${params}`);
+      searchResults = append ? [...searchResults, ...(d.results || [])] : (d.results || []);
+      searchCursor = d.paging?.next?.after || null;
+      searchTotal = d.total ?? null;
+      if (!searchResults.length) alert.innerHTML = `<div class="alert info">No companies found</div>`;
+      render();
+    } catch(e) { alert.innerHTML = `<div class="alert err">${e.message}</div>`; browseBtn.disabled = false; browseBtn.textContent = "Browse All"; }
+  }
+
+  btn.addEventListener("click", doSearch);
+  browseBtn.addEventListener("click", () => doBrowse(false));
+  inp.addEventListener("keydown", e => e.key === "Enter" && doSearch());
+
+  document.querySelectorAll("tr.clickable").forEach(row => {
+    row.addEventListener("click", () => {
+      const c = searchResults.find(x => x.id == row.dataset.id);
+      if (c) { selectedCompany = c; editFlags = parseFlags(c.properties.mh_feature_flags); render(); }
+    });
+  });
+
+  const loadMore = document.getElementById("load-more-btn");
+  if (loadMore) loadMore.addEventListener("click", () => doBrowse(true));
+}
+
+function renderDetail() {
+  const p = selectedCompany.properties;
+  const addr = [p.address,p.city,p.state,p.zip,p.country].filter(Boolean).join(", ");
+  const flagPills = FLAGS.map(f => {
+    const on = editFlags.includes(f);
+    return `<span class="flag-pill ${on?"on":"off"}" data-flag="${f}"><span style="font-size:10px">${on?"✓":"+"}</span>${f.replace("AECO_","")}</span>`;
+  }).join("");
+  return `
+  <span class="back-link" id="back-btn">&#8592; Back to results</span>
+  <div class="card mb12">
+    <div class="gap8 mb12">
+      <div class="avatar">${(p.name||"?").slice(0,2).toUpperCase()}</div>
+      <div>
+        <div style="font-weight:500;font-size:15px">${p.name||"—"}</div>
+        <div style="font-size:12px;color:var(--text2)">HubSpot ID: ${selectedCompany.id} · company_id: ${p.company_id||"—"}</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="detail-grid">
+      <span class="field-label">Domain</span><span class="field-val">${fmt(p.domain)}</span>
+      <span class="field-label">Phone</span><span class="field-val">${fmt(p.phone)}</span>
+      <span class="field-label">Address</span><span class="field-val">${addr||"—"}</span>
+      <span class="field-label">Lifecycle</span><span class="field-val">${p.lifecyclestage?`<span class="badge blue">${p.lifecyclestage}</span>`:"—"}</span>
+      <span class="field-label">Lead status</span><span class="field-val">${fmt(p.hs_lead_status)}</span>
+      <span class="field-label">Type</span><span class="field-val">${fmt(p.type)}</span>
+      <span class="field-label">Employees</span><span class="field-val">${fmt(p.numberofemployees)}</span>
+      <span class="field-label">MH Users</span><span class="field-val">${fmt(p.mh_users)}</span>
+      <span class="field-label">MH Projects</span><span class="field-val">${fmt(p.mh_projects)}</span>
+      <span class="field-label">MH Conversations</span><span class="field-val">${fmt(p.mh_conversations)}</span>
+      <span class="field-label">Created</span><span class="field-val">${fmtDate(p.createdate)}</span>
+      <span class="field-label">Modified</span><span class="field-val">${fmtDate(p.hs_lastmodifieddate)}</span>
+    </div>
+  </div>
+  <div class="card">
+    <div style="font-size:15px;font-weight:500;margin-bottom:4px">Feature flags</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Click to toggle, then save.</div>
+    <div id="flag-pills" class="mb12">${flagPills}</div>
+    <div id="flag-alert" class="mb8"></div>
+    <div class="gap8">
+      <button class="btn primary" id="save-flags-btn">Save flags</button>
+      <button class="btn sm" id="clear-flags-btn">Clear all</button>
+      <button class="btn sm" id="enable-all-btn">Enable all</button>
+    </div>
+  </div>`;
+}
+
+function bindDetail() {
+  document.getElementById("back-btn").addEventListener("click", () => { selectedCompany = null; render(); });
+  document.querySelectorAll(".flag-pill").forEach(pill => {
+    pill.addEventListener("click", () => {
+      const f = pill.dataset.flag;
+      if (editFlags.includes(f)) editFlags = editFlags.filter(x => x !== f);
+      else editFlags = [...editFlags, f];
+      pill.className = `flag-pill ${editFlags.includes(f)?"on":"off"}`;
+      pill.querySelector("span").textContent = editFlags.includes(f) ? "✓" : "+";
+    });
+  });
+  document.getElementById("clear-flags-btn").addEventListener("click", () => {
+    editFlags = [];
+    document.querySelectorAll(".flag-pill").forEach(p => { p.className = "flag-pill off"; p.querySelector("span").textContent = "+"; });
+  });
+  document.getElementById("enable-all-btn").addEventListener("click", () => {
+    editFlags = [...FLAGS];
+    document.querySelectorAll(".flag-pill").forEach(p => { p.className = "flag-pill on"; p.querySelector("span").textContent = "✓"; });
+  });
+  document.getElementById("save-flags-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("save-flags-btn");
+    const alertEl = document.getElementById("flag-alert");
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Saving...';
+    alertEl.innerHTML = "";
+    try {
+      const value = editFlags.join(";");
+      await hs(`/crm/v3/objects/companies/${selectedCompany.id}`, "PATCH", { properties: { mh_feature_flags: value } });
+      selectedCompany.properties.mh_feature_flags = value;
+      const idx = searchResults.findIndex(c => c.id === selectedCompany.id);
+      if (idx > -1) searchResults[idx].properties.mh_feature_flags = value;
+      toast(`Flags updated for ${selectedCompany.properties.name}`);
+    } catch(e) { alertEl.innerHTML = `<div class="alert err">${e.message}</div>`; }
+    btn.disabled = false; btn.textContent = "Save flags";
+  });
+}
+
+let createForm = { name:"", company_id:"", domain:"", phone:"", address:"", city:"", state:"", country:"", zip:"", lifecyclestage:"lead", type:"", mh_feature_flags:[] };
+
+function renderCreate() {
+  const flagPills = FLAGS.map(f => {
+    const on = createForm.mh_feature_flags.includes(f);
+    return `<span class="flag-pill ${on?"on":"off"}" data-flag="${f}"><span style="font-size:10px">${on?"✓":"+"}</span>${f.replace("AECO_","")}</span>`;
+  }).join("");
+  const lcOpts = LIFECYCLE.map(o => `<option value="${o}" ${createForm.lifecyclestage===o?"selected":""}>${o}</option>`).join("");
+  return `<div class="card" style="max-width:560px">
+    <div style="font-size:15px;font-weight:500;margin-bottom:16px">New company</div>
+    <div id="create-alert"></div>
+    <label>Name *</label><input id="f-name" value="${createForm.name}" placeholder="Acme Corp" class="mb12" />
+    <label>company_id (UUID)</label><input id="f-cid" value="${createForm.company_id}" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" class="mb12" />
+    <label>Domain</label><input id="f-domain" value="${createForm.domain}" placeholder="acme.com" class="mb12" />
+    <label>Phone</label><input id="f-phone" value="${createForm.phone}" placeholder="+1 555 000 0000" class="mb12" />
+    <div class="grid2 mb12">
+      <div><label>City</label><input id="f-city" value="${createForm.city}" /></div>
+      <div><label>State</label><input id="f-state" value="${createForm.state}" /></div>
+      <div><label>Country</label><input id="f-country" value="${createForm.country}" /></div>
+      <div><label>ZIP</label><input id="f-zip" value="${createForm.zip}" /></div>
+    </div>
+    <div class="grid2 mb12">
+      <div><label>Lifecycle stage</label><select id="f-lc">${lcOpts}</select></div>
+      <div><label>Type</label><select id="f-type"><option value="">— none —</option><option value="PARTNER" ${createForm.type==="PARTNER"?"selected":""}>PARTNER</option><option value="VENDOR" ${createForm.type==="VENDOR"?"selected":""}>VENDOR</option></select></div>
+    </div>
+    <label class="mb8">Feature flags</label>
+    <div id="create-flag-pills" class="mb16">${flagPills}</div>
+    <button class="btn primary" id="create-btn">Create company</button>
+  </div>`;
+}
+
+function bindCreate() {
+  [["f-name","name"],["f-cid","company_id"],["f-domain","domain"],["f-phone","phone"],["f-city","city"],["f-state","state"],["f-country","country"],["f-zip","zip"]]
+    .forEach(([id,field]) => document.getElementById(id)?.addEventListener("input", e => createForm[field] = e.target.value));
+  document.getElementById("f-lc").addEventListener("change", e => createForm.lifecyclestage = e.target.value);
+  document.getElementById("f-type").addEventListener("change", e => createForm.type = e.target.value);
+  document.querySelectorAll("#create-flag-pills .flag-pill").forEach(pill => {
+    pill.addEventListener("click", () => {
+      const f = pill.dataset.flag;
+      createForm.mh_feature_flags = createForm.mh_feature_flags.includes(f) ? createForm.mh_feature_flags.filter(x=>x!==f) : [...createForm.mh_feature_flags,f];
+      pill.className = `flag-pill ${createForm.mh_feature_flags.includes(f)?"on":"off"}`;
+      pill.querySelector("span").textContent = createForm.mh_feature_flags.includes(f) ? "✓" : "+";
+    });
+  });
+  document.getElementById("create-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("create-btn");
+    const alertEl = document.getElementById("create-alert");
+    if (!createForm.name.trim()) { alertEl.innerHTML = `<div class="alert err">Company name is required</div>`; return; }
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Checking...';
+    alertEl.innerHTML = "";
+    try {
+      if (createForm.company_id.trim()) {
+        const dup = await checkDuplicateCompanyId(createForm.company_id.trim());
+        if (dup) {
+          alertEl.innerHTML = `<div class="alert err">company_id already mapped to: <strong>${dup.properties.name}</strong> (HubSpot ID: ${dup.id})</div>`;
+          btn.disabled = false; btn.textContent = "Create company"; return;
+        }
+      }
+      btn.innerHTML = '<span class="spinner"></span> Creating...';
+      const props = { name: createForm.name };
+      ["company_id","domain","phone","address","city","state","country","zip","lifecyclestage","type"]
+        .forEach(k => { if (createForm[k]) props[k] = createForm[k]; });
+      if (createForm.mh_feature_flags.length) props.mh_feature_flags = createForm.mh_feature_flags.join(";");
+      const res = await hs("/crm/v3/objects/companies","POST",{ properties: props });
+      toast(`Created: ${res.properties?.name || createForm.name} (ID: ${res.id})`);
+      createForm = { name:"", company_id:"", domain:"", phone:"", address:"", city:"", state:"", country:"", zip:"", lifecyclestage:"lead", type:"", mh_feature_flags:[] };
+      render();
+    } catch(e) { alertEl.innerHTML = `<div class="alert err">${e.message}</div>`; }
+    btn.disabled = false; btn.textContent = "Create company";
+  });
+}
+
+if (pat) setConnected(true);
+render();
+</script>
+</body>
+</html>
