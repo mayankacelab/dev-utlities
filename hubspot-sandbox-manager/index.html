@@ -130,7 +130,7 @@
 // e.g. https://hubspot-sandbox-manager.YOUR_SUBDOMAIN.workers.dev
 const WORKER_URL = "https://hubspot-sandbox-manager.mayank-a42.workers.dev";
 const BASE = `${WORKER_URL}/api/hubspot`;
-const FLAGS = ["AECO_Revit_Keynotes","AECO_SpecPlanner_Pro","AECO_Document_Builder"];
+let FLAGS = ["AECO_Revit_Keynotes","AECO_SpecPlanner_Pro","AECO_Document_Builder"]; // defaults, replaced on load
 const LIFECYCLE = ["subscriber","lead","marketingqualifiedlead","salesqualifiedlead","opportunity","customer","evangelist","other"];
 const COMPANY_PROPS = ["name","company_id","domain","phone","city","state","country","zip","address","industry","numberofemployees","annualrevenue","lifecyclestage","hs_lead_status","type","mh_feature_flags","mh_users","mh_projects","mh_conversations","description","createdate","hs_lastmodifieddate"];
 
@@ -140,6 +140,32 @@ let searchCursor = null;
 let searchTotal = null;
 let selectedCompany = null;
 let editFlags = [];
+
+async function loadFlags() {
+  try {
+    const prop = await hs("/crm/v3/properties/companies/mh_feature_flags");
+    if (prop.options?.length) {
+      FLAGS = prop.options.filter(o => !o.hidden).map(o => o.value);
+    }
+  } catch(e) {
+    // Keep hardcoded defaults on error
+  }
+}
+
+async function addFlagOption(value) {
+  // Normalise: prefix with AECO_ if missing, replace spaces with underscores
+  value = value.trim().replace(/\s+/g, "_");
+  if (!value.startsWith("AECO_")) value = "AECO_" + value;
+  if (FLAGS.includes(value)) return { alreadyExists: true };
+  const label = value;
+  // Fetch current options so we don't overwrite them
+  const prop = await hs("/crm/v3/properties/companies/mh_feature_flags");
+  const existing = prop.options || [];
+  const newOptions = [...existing, { label, value, displayOrder: -1, hidden: false }];
+  await hs("/crm/v3/properties/companies/mh_feature_flags", "PATCH", { options: newOptions });
+  FLAGS = [...FLAGS, value];
+  return { value };
+}
 
 async function hs(path, method = "GET", body) {
   const res = await fetch(`${BASE}${path}`, {
@@ -175,7 +201,7 @@ function fmtDate(val) { return val ? val.slice(0, 10) : "—"; }
 function flagBadges(raw) {
   const flags = parseFlags(raw);
   if (!flags.length) return '<span style="color:var(--text3);font-size:12px">none</span>';
-  return flags.map(f => `<span class="badge green">${f.replace("AECO_","")}</span>`).join(" ");
+  return flags.map(f => `<span class="badge green">${f}</span>`).join(" ");
 }
 
 async function checkDuplicateCompanyId(cid) {
@@ -186,6 +212,59 @@ async function checkDuplicateCompanyId(cid) {
   return d.results?.length > 0 ? d.results[0] : null;
 }
 
+function renderFlagOptions() {
+  const rows = FLAGS.map(f => `
+    <tr>
+      <td><span class="badge green">${f}</span></td>
+    </tr>`).join("");
+  return `<div class="card" style="max-width:560px">
+    <div style="font-size:15px;font-weight:500;margin-bottom:4px">Flag Options</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:16px">
+      These are the available <code>mh_feature_flags</code> options defined in HubSpot.
+      Adding a new option here updates the property definition for everyone.
+    </div>
+    <div id="flags-alert" class="mb12"></div>
+    <table class="mb16">
+      <thead><tr><th>Internal name</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="font-size:13px;font-weight:500;margin-bottom:6px">Add new option</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:8px">
+      Use the format <code>AECO_Your_Flag_Name</code> — underscores only, no spaces.
+      The <code>AECO_</code> prefix is added automatically if omitted.
+    </div>
+    <div class="gap8">
+      <input id="new-flag-input" placeholder="e.g. AECO_New_Feature or New_Feature" style="flex:1" />
+      <button class="btn primary" id="add-flag-btn">Add option</button>
+    </div>
+  </div>`;
+}
+
+function bindFlagOptions() {
+  document.getElementById("add-flag-btn").addEventListener("click", async () => {
+    const inp = document.getElementById("new-flag-input");
+    const alertEl = document.getElementById("flags-alert");
+    const val = inp.value.trim(); if (!val) return;
+    const btn = document.getElementById("add-flag-btn");
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Adding...';
+    alertEl.innerHTML = "";
+    try {
+      const result = await addFlagOption(val);
+      if (result.alreadyExists) {
+        alertEl.innerHTML = `<div class="alert info">That flag option already exists.</div>`;
+      } else {
+        inp.value = "";
+        toast(`Flag option "${result.value}" added to HubSpot`);
+        render();
+      }
+    } catch(e) { alertEl.innerHTML = `<div class="alert err">${e.message}</div>`; }
+    btn.disabled = false; btn.textContent = "Add option";
+  });
+  document.getElementById("new-flag-input").addEventListener("keydown", e => {
+    if (e.key === "Enter") document.getElementById("add-flag-btn").click();
+  });
+}
+
 function render() {
   const app = document.getElementById("app");
   if (selectedCompany) { app.innerHTML = renderDetail(); bindDetail(); return; }
@@ -193,10 +272,13 @@ function render() {
     <div class="tabs">
       <button class="tab ${tab==="search"?"active":""}" data-tab="search">Search & Manage</button>
       <button class="tab ${tab==="create"?"active":""}" data-tab="create">Create Company</button>
+      <button class="tab ${tab==="flags"?"active":""}" data-tab="flags">Flag Options</button>
     </div>
-    ${tab === "search" ? renderSearch() : renderCreate()}
+    ${tab === "search" ? renderSearch() : tab === "create" ? renderCreate() : renderFlagOptions()}
   `;
-  if (tab === "search") bindSearch(); else bindCreate();
+  if (tab === "search") bindSearch();
+  else if (tab === "create") bindCreate();
+  else bindFlagOptions();
   document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => { tab = t.dataset.tab; render(); }));
 }
 
@@ -300,7 +382,7 @@ function renderDetail() {
   const addr = [p.address,p.city,p.state,p.zip,p.country].filter(Boolean).join(", ");
   const flagPills = FLAGS.map(f => {
     const on = editFlags.includes(f);
-    return `<span class="flag-pill ${on?"on":"off"}" data-flag="${f}"><span style="font-size:10px">${on?"✓":"+"}</span>${f.replace("AECO_","")}</span>`;
+    return `<span class="flag-pill ${on?"on":"off"}" data-flag="${f}"><span style="font-size:10px">${on?"✓":"+"}</span>${f}</span>`;
   }).join("");
   return `
   <span class="back-link" id="back-btn">&#8592; Back to results</span>
@@ -382,7 +464,7 @@ let createForm = { name:"", company_id:"", domain:"", phone:"", address:"", city
 function renderCreate() {
   const flagPills = FLAGS.map(f => {
     const on = createForm.mh_feature_flags.includes(f);
-    return `<span class="flag-pill ${on?"on":"off"}" data-flag="${f}"><span style="font-size:10px">${on?"✓":"+"}</span>${f.replace("AECO_","")}</span>`;
+    return `<span class="flag-pill ${on?"on":"off"}" data-flag="${f}"><span style="font-size:10px">${on?"✓":"+"}</span>${f}</span>`;
   }).join("");
   const lcOpts = LIFECYCLE.map(o => `<option value="${o}" ${createForm.lifecyclestage===o?"selected":""}>${o}</option>`).join("");
   return `<div class="card" style="max-width:560px">
@@ -449,7 +531,7 @@ function bindCreate() {
   });
 }
 
-render();
+loadFlags().then(render);
 </script>
 </body>
 </html>
