@@ -6,7 +6,7 @@ Internal developer utilities for the AECO platform. Each utility is self-contain
 
 | Utility | Description | Type |
 |---|---|---|
-| [hubspot-sandbox-manager](./hubspot-sandbox-manager/) | Manage HubSpot sandbox companies and feature flags | Standalone HTML |
+| [hubspot-sandbox-manager](./hubspot-sandbox-manager/) | Manage HubSpot sandbox companies and feature flags | GitHub Pages + Cloudflare Worker |
 
 ## Adding a new utility
 
@@ -18,5 +18,5 @@ Internal developer utilities for the AECO platform. Each utility is self-contain
 ## Guidelines
 
 - Each utility must have its own `README.md`
-- No secrets or API keys committed — use env vars or browser localStorage
+- No secrets or API keys committed — use Cloudflare Worker secrets or env vars
 - Utilities should be self-contained with minimal or zero dependencies

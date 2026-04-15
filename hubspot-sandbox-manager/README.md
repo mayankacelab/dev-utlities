@@ -24,13 +24,19 @@ Hosted on GitHub Pages — no login required, just open and use.
 ### Managing feature flags
 
 1. Find and click a company to open its detail view
-2. The **Feature flags** section shows three toggleable flags:
-   - `Revit_Keynotes`
-   - `SpecPlanner_Pro`
-   - `Document_Builder`
+2. The **Feature flags** section shows all available flags loaded from HubSpot
 3. Click a flag pill to toggle it on (green) or off (grey)
 4. Click **Save flags** to write the changes to HubSpot
 5. Use **Enable all** to turn on all flags at once, or **Clear all** to remove them all
+
+---
+
+### Adding a new flag option
+
+1. Click the **Flag Options** tab
+2. The table lists all flag options currently defined in HubSpot
+3. Type a new flag name in the input (e.g. `AECO_New_Feature` or just `New_Feature` — the `AECO_` prefix is added automatically)
+4. Click **Add option** — this updates the `mh_feature_flags` property definition in HubSpot and makes the new flag available to all companies immediately
 
 ---
 
@@ -50,13 +56,9 @@ Hosted on GitHub Pages — no login required, just open and use.
 
 ## Feature flags reference
 
-| Flag | What it enables |
-|------|----------------|
-| `AECO_Revit_Keynotes` | Revit Keynotes integration |
-| `AECO_SpecPlanner_Pro` | SpecPlanner Pro features |
-| `AECO_Document_Builder` | Document Builder features |
+Flag options are managed dynamically — the app loads them from the HubSpot `mh_feature_flags` property definition at startup. Use the **Flag Options** tab to view all current options or add new ones.
 
-Flags are stored on the company's `mh_feature_flags` property as a semicolon-separated string (e.g. `AECO_Revit_Keynotes;AECO_SpecPlanner_Pro`).
+Flags are stored on the company's `mh_feature_flags` property as a semicolon-separated string (e.g. `AECO_Revit_Keynotes;AECO_SpecPlanner_Pro`). All flag names follow the `AECO_` prefix convention.
 
 ---
 
