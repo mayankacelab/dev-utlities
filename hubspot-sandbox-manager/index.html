@@ -37,6 +37,7 @@
   header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
   .logo { width: 32px; height: 32px; border-radius: 50%; }
   header h1 { font-size: 17px; font-weight: 500; }
+  .user-row { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text2); }
   .chip { font-size: 11px; padding: 2px 8px; border-radius: 99px; font-weight: 500; background: var(--green-bg); color: var(--green-text); border: 0.5px solid var(--green-border); }
   .chip.off { background: var(--bg3); color: var(--text2); border-color: var(--border); }
 
@@ -120,17 +121,17 @@
       <img src="image.png" class="logo" alt="Acelab" />
       <h1>HubSpot Sandbox Manager</h1>
     </div>
+    <div class="user-row" id="user-info"></div>
   </header>
   <div id="app"></div>
 </div>
 <div id="toast"></div>
 
 <script>
-// After deploying the Cloudflare Worker, replace this URL with your worker URL.
-// e.g. https://hubspot-sandbox-manager.YOUR_SUBDOMAIN.workers.dev
 const WORKER_URL = "https://hubspot-sandbox-manager.mayank-a42.workers.dev";
 const BASE = `${WORKER_URL}/api/hubspot`;
 let FLAGS = ["AECO_Revit_Keynotes","AECO_SpecPlanner_Pro","AECO_Document_Builder"]; // defaults, replaced on load
+let currentUser = null;
 const LIFECYCLE = ["subscriber","lead","marketingqualifiedlead","salesqualifiedlead","opportunity","customer","evangelist","other"];
 const COMPANY_PROPS = ["name","company_id","domain","phone","city","state","country","zip","address","industry","numberofemployees","annualrevenue","lifecyclestage","hs_lead_status","type","mh_feature_flags","mh_users","mh_projects","mh_conversations","description","createdate","hs_lastmodifieddate"];
 
@@ -170,9 +171,14 @@ async function addFlagOption(value) {
 async function hs(path, method = "GET", body) {
   const res = await fetch(`${BASE}${path}`, {
     method,
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
   });
+  if (res.status === 401) {
+    window.location.href = `${WORKER_URL}/auth/login?redirect=${encodeURIComponent(location.href)}`;
+    return;
+  }
   if (!res.ok) {
     const t = await res.text();
     let msg = `${res.status}`;
@@ -531,7 +537,35 @@ function bindCreate() {
   });
 }
 
-loadFlags().then(render);
+function renderUserInfo() {
+  const el = document.getElementById("user-info");
+  if (el && currentUser) {
+    el.innerHTML = `<span>${currentUser.email}</span><a href="${WORKER_URL}/auth/logout" class="btn sm">Sign out</a>`;
+  }
+}
+
+function renderLogin() {
+  document.getElementById("app").innerHTML = `
+    <div class="pat-wrap" style="text-align:center">
+      <h2>Sign in required</h2>
+      <p>Use your Acelab Google account to access this tool.</p>
+      <a href="${WORKER_URL}/auth/login?redirect=${encodeURIComponent(location.href)}"
+         class="btn primary" style="display:inline-flex;margin-top:8px">
+        Sign in with Google
+      </a>
+    </div>`;
+}
+
+async function init() {
+  const res = await fetch(`${WORKER_URL}/auth/me`, { credentials: "include" });
+  if (!res.ok) { renderLogin(); return; }
+  currentUser = await res.json();
+  renderUserInfo();
+  await loadFlags();
+  render();
+}
+
+init();
 </script>
 </body>
 </html>
