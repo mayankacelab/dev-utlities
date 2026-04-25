@@ -1,7 +1,7 @@
 # HubSpot Sandbox Manager
 
 A web app for managing HubSpot sandbox companies and feature flags.
-Hosted on GitHub Pages — no login required, just open and use.
+Hosted on GitHub Pages, restricted to **@acelabusa.com** Google accounts.
 
 **URL:** https://mayankacelab.github.io/dev-utlities/hubspot-sandbox-manager/
 
@@ -68,7 +68,23 @@ Flags are stored on the company's `mh_feature_flags` property as a semicolon-sep
 Browser (GitHub Pages)  →  Cloudflare Worker  →  api.hubapi.com
 ```
 
-The Cloudflare Worker acts as a proxy — HubSpot's API blocks direct browser requests, so the Worker forwards them server-side with the HubSpot PAT stored securely as a Cloudflare secret.
+The Cloudflare Worker acts as both an auth gate and a HubSpot API proxy. On every request it verifies a signed session cookie (set after Google OAuth). Unauthenticated requests are rejected before they can reach HubSpot. The HubSpot PAT never leaves the Worker.
+
+**Auth flow:**
+1. User visits the app — frontend calls `/auth/me` on the Worker
+2. No valid session → frontend shows "Sign in with Google"
+3. User signs in → Google redirects to `/auth/callback` on the Worker
+4. Worker verifies email is `@acelabusa.com`, sets a signed HTTP-only cookie, redirects back to the app
+5. Subsequent API calls carry the cookie and are proxied to HubSpot
+
+### Required Cloudflare secrets
+
+| Secret | How to get it |
+|---|---|
+| `HUBSPOT_PAT` | HubSpot → Private Apps |
+| `GOOGLE_CLIENT_ID` | Google Cloud Console → APIs & Services → Credentials |
+| `GOOGLE_CLIENT_SECRET` | Same credential as above |
+| `COOKIE_SECRET` | Generate with `openssl rand -hex 32` |
 
 ### Deploying the Worker
 
@@ -76,11 +92,20 @@ The Cloudflare Worker acts as a proxy — HubSpot's API blocks direct browser re
 cd hubspot-sandbox-manager
 npm install
 npx wrangler login
-npx wrangler secret put HUBSPOT_PAT   # paste the HubSpot Private App Token
+npx wrangler secret put HUBSPOT_PAT
+npx wrangler secret put GOOGLE_CLIENT_ID
+npx wrangler secret put GOOGLE_CLIENT_SECRET
+npx wrangler secret put COOKIE_SECRET
 npm run worker:deploy
 ```
 
-After deploy, update `WORKER_URL` in `index.html` with the URL printed by Wrangler, then commit and push.
+### Google OAuth setup
+
+1. Create a project in [Google Cloud Console](https://console.cloud.google.com)
+2. Go to **APIs & Services → OAuth consent screen** — set user type to External, add `openid` and `email` scopes, add teammates as test users
+3. Go to **Credentials → Create OAuth 2.0 Client ID** — type: Web application
+4. Add authorized redirect URI: `https://hubspot-sandbox-manager.mayank-a42.workers.dev/auth/callback`
+5. Use the generated Client ID and Secret as the `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` secrets above
 
 ### Enabling GitHub Pages
 
@@ -92,4 +117,4 @@ After deploy, update `WORKER_URL` in `index.html` with the URL printed by Wrangl
 npm run worker:dev   # Worker runs at http://localhost:8787
 ```
 
-Update `WORKER_URL` in `index.html` to `http://localhost:8787` for local testing.
+Update `WORKER_URL` in `index.html` to `http://localhost:8787` for local testing. Note: Google OAuth won't work locally unless you also add `http://localhost:8787/auth/callback` as an authorized redirect URI in Google Cloud Console.
