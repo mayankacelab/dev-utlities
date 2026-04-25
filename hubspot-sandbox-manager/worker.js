@@ -171,7 +171,7 @@ function handleLogout(env) {
   return new Response(null, {
     status: 302,
     headers: {
-      Location: env.ALLOWED_ORIGIN,
+      Location: `${env.ALLOWED_ORIGIN}/dev-utlities/hubspot-sandbox-manager/`,
       "Set-Cookie": `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=None; Max-Age=0; Path=/`,
     },
   });
